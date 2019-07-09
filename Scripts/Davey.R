@@ -7,34 +7,45 @@
 # load useful libraries
 install.packages("tidyverse")
 install.packages("magrittr")  
+library(tidyverse)
+library(magrittr)
 
 # read in the inventory data
-iTree_Baltimore_Tree <- read_csv(file.path('Forests_raw',
-                                           'BaltimorePlots',   
-                                           'iTree_Baltimore',
-                                           'Baltimore-iTree-Data-1999-2004-2009-2014_led.csv')) %>% #Fixme In the original dataset the first column was labled "51". It is clearly the plot_ID. Plot 51 didn't have any data in the plot file, so I changed that cell to "PlotID" 
-  select(`PlotID`,
-         `YEAR`,
-         `SPECIES CODE`,
-         `%LEAF MISSING`,
-         `TREE HT`,
-         `DBH1` # fixme: DBH1 isn't always filled. Frequently there are data in dbh2 column.
+LakeForest <- read_csv(file.path('RawData',
+                                 'LakeForestRaw.csv')) %>% 
+  
+  select(`LATITUDE,N,32,10`,
+         `LONGITUDE,N,32,10`,
+         `SPP,C,35`,
+         `COND,C,9`,
+         `INSPECT_DT,D`,
+         `DBH,C,4`,
+         `ID,N,11,0`,
+         `LOCATION,C,17`,
+         `STREET,C,23`,
+         `SIDE,C,9`
          
   ) %>% 
-  rename(plot_ID = `PlotID`,
-         missing = `%LEAF MISSING`,
-         obs_year =`YEAR`) %>% 
+  rename(Latitude = `LATITUDE,N,32,10`,
+         Longitude = `LONGITUDE,N,32,10`,
+         Year =`INSPECT_DT,D`,
+         GenusSpecies = `SPP,C,35`,
+         TreeID = `ID,N,11,0`,
+         StreetTree = `LOCATION,C,17`,
+         Site = `STREET,C,23`,
+         Plot = `SIDE,C,9`,
+         DBH_IN = `DBH,C,4`
+         ) %>% 
   
-  mutate(data_source = 'iTree_Baltimore',
-         sub_plot_ID = NA,
-         tree_ID = row_number(),
-         dbh_cm = `DBH1`*2.54,
-         height_m = `TREE HT`  * 0.3048)  # fixme removing dead trees, do you want to do that?
+  mutate(DataSource = 'LakeForest',
+         InventoryTyp = 'Municipal',
+         DataType = 'Point'
+       ) 
 
-# fixme Getting a parsing error. It doesn't seem to matter though.
+# Remove non-applicable trees
+  LakeForest %>% select(GenusSpecies =! STUMP,
+                        )  
 
-
-# join with species reconciliaton list
 # first read in the species list
 species_list <- read_csv(file.path('Forests_raw',
                                    'species_reconciliation/species_reconciliation_short.csv'))
